@@ -1,0 +1,162 @@
+10.10 12:11 PM
+
+ Basic SQL & Key Concepts
+
+1. What is a Primary Key?
+ A Primary Key uniquely identifies each record in a table. It can’t have NULL or duplicate values.
+
+2. What are Keys in SQL?
+ Keys are used to identify rows and make relationships between tables.
+Examples: Primary Key, Foreign Key, Unique Key, Candidate Key.
+
+3. What are Constraints?
+ Constraints are rules applied to columns to maintain data accuracy.
+Examples: NOT NULL, UNIQUE, PRIMARY KEY, FOREIGN KEY, CHECK, DEFAULT.
+
+4. NOT NULL & UNIQUE Constraints
+ NOT NULL: Value must be given (no NULLs).
+ UNIQUE: All values must be different (only one NULL allowed).
+
+5. What is a Cursor?
+ A cursor is used to fetch query results row by row. Useful in procedures when processing each row separately.
+
+6. What is a Trigger?
+ A trigger automatically runs when a table event happens (like INSERT, UPDATE, DELETE). Used for data checks and maintaining integrity.
+
+
+---
+
+ SQL Commands
+
+7. Syntax of UPDATE command:
+
+UPDATE table_name 
+SET column1 = value1 
+WHERE condition;
+
+8. Define DDL & DML Commands:
+ DDL (Data Definition Language): Defines database objects.
+Examples: CREATE, ALTER, DROP.
+ DML (Data Manipulation Language): Manages data inside tables.
+Examples: SELECT, INSERT, UPDATE, DELETE.
+
+9. Common DDL Syntax:
+
+CREATE TABLE table_name (...);
+ALTER TABLE table_name ADD column_name datatype;
+DROP TABLE table_name;
+TRUNCATE TABLE table_name;
+
+10. Common DML Syntax:
+
+SELECT * FROM table_name;
+INSERT INTO table_name VALUES (...);
+UPDATE table_name SET column=value WHERE condition;
+DELETE FROM table_name WHERE condition;
+
+11. Uses of ALTER TABLE:
+ Add, modify, or delete a column.
+ Add or remove constraints.
+
+12. Meaning of % and _ in LIKE:
+ % – any number of characters.
+ _ – exactly one character.
+Example: WHERE name LIKE 'A%'
+
+13. Trigger Syntax:
+
+CREATE TRIGGER trigger_name
+BEFORE|AFTER INSERT|UPDATE|DELETE
+ON table_name
+FOR EACH ROW
+BEGIN
+   -- statements
+END;
+
+
+---
+
+ Differences
+
+14. TRUNCATE vs DELETE:
+
+Feature	TRUNCATE	DELETE
+
+Type	DDL	DML
+Rollback	No	Yes
+WHERE clause	Not allowed	Allowed
+Speed	Faster	Slower
+
+
+15. Procedure vs Trigger:
+
+Feature	Procedure	Trigger
+
+Called by	User	Automatically
+Parameters	Yes	No
+Event-based	No	Yes
+
+
+16. DROP vs DELETE:
+
+Feature	DROP	DELETE
+
+Removes	Whole table	Only rows
+Rollback	No	Yes
+Type	DDL	DML
+
+
+
+---
+
+ Advanced SQL Features
+
+17. What is a Foreign Key?
+ A column that refers to the Primary Key of another table to maintain relationship.
+
+Example:
+
+FOREIGN KEY (CustomerID) REFERENCES Customers(CustomerID);
+
+18. What is a View?
+ A view is a virtual table showing data from one or more tables.
+Used for simplicity, security, and consistency.
+
+19. What are Aggregate Functions?
+ Functions that perform calculations on multiple rows and return one result.
+
+20. Examples of Aggregate Functions:
+COUNT(), SUM(), AVG(), MAX(), MIN()
+
+21. Types of JOINs:
+
+INNER JOIN: Matching rows in both tables
+
+LEFT JOIN: All from left + matches from right
+
+RIGHT JOIN: All from right + matches from left
+
+FULL JOIN: All from both tables
+
+
+22. String Functions:
+
+UPPER()/LOWER(): Change case
+
+LENGTH(): Count characters
+
+SUBSTRING(): Extract part of string
+
+CONCAT(): Join strings
+
+TRIM(): Remove spaces
+
+
+23. Foreign Key Constraint:
+ Ensures values in child table match primary key values in parent table (referential integrity).
+
+24. Constraints in SQL:
+ Rules like NOT NULL, UNIQUE, PRIMARY KEY, FOREIGN KEY, CHECK, DEFAULT.
+
+
+
