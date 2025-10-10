@@ -1,0 +1,428 @@
+10.10 6:47 AM
+
+
+QUESTION 1 – Faculty, Subject, Student, M_Mark Tables (SQL)
+
+-- Table Creation
+CREATE TABLE Faculty (
+    FacultyCode INT PRIMARY KEY,
+    FacultyName VARCHAR(50)
+);
+
+CREATE TABLE Subject (
+    SubjectCode INT PRIMARY KEY,
+    SubjectName VARCHAR(50),
+    MaxMark INT,
+    FacultyCode INT,
+    FOREIGN KEY (FacultyCode) REFERENCES Faculty(FacultyCode)
+);
+
+CREATE TABLE Student (
+    StudentCode INT PRIMARY KEY,
+    StudentName VARCHAR(50),
+    DOB DATE,
+    StudentsBranch VARCHAR(5),
+    AdmissionDate DATE
+);
+
+CREATE TABLE M_Mark (
+    StudentCode INT,
+    SubjectCode INT,
+    Mark INT,
+    FOREIGN KEY (StudentCode) REFERENCES Student(StudentCode),
+    FOREIGN KEY (SubjectCode) REFERENCES Subject(SubjectCode)
+);
+
+-- Dynamic Insert Statements
+INSERT INTO Faculty VALUES (&FacultyCode, '&FacultyName');
+INSERT INTO Subject VALUES (&SubjectCode, '&SubjectName', &MaxMark, &FacultyCode);
+INSERT INTO Student VALUES (&StudentCode, '&StudentName', TO_DATE('&DOB','DD-MM-YYYY'), '&StudentsBranch', TO_DATE('&AdmissionDate','DD-MM-YYYY'));
+INSERT INTO M_Mark VALUES (&StudentCode, &SubjectCode, &Mark);
+
+-- Queries
+SELECT FacultyName FROM Faculty;
+
+SELECT COUNT(*) AS NumberOfFaculties FROM Faculty;
+
+SELECT s.StudentName, SUM(m.Mark) AS TotalMark
+FROM Student s
+JOIN M_Mark m ON s.StudentCode = m.StudentCode
+GROUP BY s.StudentName;
+
+SELECT sub.SubjectName, AVG(m.Mark) AS AverageMark
+FROM Subject sub
+JOIN M_Mark m ON sub.SubjectCode = m.SubjectCode
+GROUP BY sub.SubjectName;
+
+SELECT DISTINCT sub.SubjectName
+FROM Subject sub
+JOIN M_Mark m ON sub.SubjectCode = m.SubjectCode
+WHERE m.Mark < 40;
+
+SELECT s.StudentName, sub.SubjectName, (m.Mark*100/sub.MaxMark) AS Percentage
+FROM Student s
+JOIN M_Mark m ON s.StudentCode = m.StudentCode
+JOIN Subject sub ON m.SubjectCode = sub.SubjectCode
+WHERE (m.Mark*100/sub.MaxMark) < 40;
+
+SELECT f.FacultyName, sub.SubjectName
+FROM Faculty f
+JOIN Subject sub ON f.FacultyCode = sub.FacultyCode;
+
+SELECT f.FacultyName
+FROM Faculty f
+JOIN Subject s ON f.FacultyCode = s.FacultyCode
+GROUP BY f.FacultyCode, f.FacultyName
+HAVING COUNT(s.SubjectCode) > 1;
+
+SELECT StudentName
+FROM Student
+WHERE FLOOR(MONTHS_BETWEEN(SYSDATE, DOB)/12) < 22;
+
+SELECT s.StudentName, sub.SubjectName, m.Mark, (m.Mark*100/sub.MaxMark) AS Percentage
+FROM Student s
+JOIN M_Mark m ON s.StudentCode = m.StudentCode
+JOIN Subject sub ON m.SubjectCode = sub.SubjectCode
+ORDER BY m.Mark ASC;
+
+
+---
+
+QUESTION 2 – Kerala and Tamil Nadu Tables (SQL Set Operators)
+
+CREATE TABLE Kerala (
+    DistName VARCHAR(50),
+    LiteracyRate FLOAT,
+    Population INT,
+    Area INT
+);
+
+CREATE TABLE Tamilnadu (
+    DistName VARCHAR(50),
+    LiteracyRate FLOAT,
+    Population INT,
+    Area INT
+);
+
+-- Dynamic Inserts
+INSERT INTO Kerala VALUES ('&KeralaDistName', &KeralaLiteracyRate, &KeralaPopulation, &KeralaArea);
+INSERT INTO Tamilnadu VALUES ('&TNDistName', &TNLiteracyRate, &TNPopulation, &TNArea);
+
+-- Set Operator Queries
+SELECT k.LiteracyRate
+FROM Kerala k
+INTERSECT
+SELECT t.LiteracyRate
+FROM Tamilnadu t;
+
+SELECT DistName FROM Kerala
+UNION
+SELECT DistName FROM Tamilnadu;
+
+SELECT LiteracyRate FROM Kerala
+MINUS
+SELECT LiteracyRate FROM Tamilnadu;
+
+
+---
+
+QUESTION 3 – Square and Non-Square Numbers (PL/SQL)
+
+CREATE TABLE Square (num INT);
+CREATE TABLE NonSquare (num INT);
+
+DECLARE
+    limit_num INT := &LimitNumber;
+    i INT := 1;
+BEGIN
+    WHILE i <= limit_num LOOP
+        IF SQRT(i) = TRUNC(SQRT(i)) THEN
+            INSERT INTO Square VALUES(i);
+        ELSE
+            INSERT INTO NonSquare VALUES(i);
+        END IF;
+        i := i + 1;
+    END LOOP;
+END;
+/
+
+BEGIN
+    FOR rec IN (SELECT num FROM Square WHERE MOD(num,2)=1) LOOP
+        DBMS_OUTPUT.PUT_LINE(rec.num);
+    END LOOP;
+END;
+/
+
+
+---
+
+QUESTION 4 – Electricity Bill Calculation (PL/SQL)
+
+DECLARE
+    cust_no INT := &CustomerNo;
+    present_reading INT := &PresentReading;
+    past_reading INT := &PastReading;
+    units INT;
+    charge FLOAT;
+BEGIN
+    units := present_reading - past_reading;
+
+    IF units < 20 THEN
+        charge := 0;
+    ELSIF units BETWEEN 20 AND 100 THEN
+        charge := units * 0.5;
+    ELSIF units BETWEEN 101 AND 300 THEN
+        charge := units * 0.75;
+    ELSIF units BETWEEN 301 AND 500 THEN
+        charge := units * 1.5;
+    ELSE
+        charge := units * 2.25;
+    END IF;
+
+    DBMS_OUTPUT.PUT_LINE('ELECTRICITY BILL');
+    DBMS_OUTPUT.PUT_LINE('Customer No: ' || cust_no);
+    DBMS_OUTPUT.PUT_LINE('Units Consumed: ' || units);
+    DBMS_OUTPUT.PUT_LINE('Total Charge: ' || charge);
+END;
+/
+
+
+---
+
+QUESTION 5 – Bank Transaction Update (PL/SQL)
+
+CREATE TABLE acco_master (
+    accno INT PRIMARY KEY,
+    name VARCHAR(50),
+    balance FLOAT
+);
+
+CREATE TABLE acco_trans (
+    accno INT,
+    trans_date DATE,
+    deb_cre CHAR(1),
+    amount FLOAT,
+    process CHAR(1),
+    FOREIGN KEY (accno) REFERENCES acco_master(accno)
+);
+
+INSERT INTO acco_master VALUES (&AccNo, '&Name', &Balance);
+INSERT INTO acco_trans VALUES (&AccNo, SYSDATE, '&DebCre', &Amount, 'N');
+
+BEGIN
+    FOR rec IN (SELECT * FROM acco_trans WHERE process='N') LOOP
+        IF rec.deb_cre='D' THEN
+            UPDATE acco_master
+            SET balance = balance - rec.amount
+            WHERE accno = rec.accno;
+        ELSE
+            UPDATE acco_master
+            SET balance = balance + rec.amount
+            WHERE accno = rec.accno;
+        END IF;
+        UPDATE acco_trans SET process='Y' WHERE accno=rec.accno;
+    END LOOP;
+END;
+/
+
+
+---
+
+QUESTION 6 – Five Highest Paid Employees (Cursor)
+
+DECLARE
+    CURSOR c_emp IS
+        SELECT empname, salary FROM Emp ORDER BY salary DESC;
+    cnt INT := 0;
+BEGIN
+    FOR rec IN c_emp LOOP
+        DBMS_OUTPUT.PUT_LINE(rec.empname || ' : ' || rec.salary);
+        cnt := cnt + 1;
+        EXIT WHEN cnt = 5;
+    END LOOP;
+END;
+/
+
+
+---
+
+QUESTION 7 – Palindrome Number (PL/SQL)
+
+DECLARE
+    num INT := &Number;
+    rev INT := 0;
+    temp INT;
+BEGIN
+    temp := num;
+    WHILE temp > 0 LOOP
+        rev := rev*10 + MOD(temp,10);
+        temp := TRUNC(temp/10);
+    END LOOP;
+
+    IF rev = num THEN
+        DBMS_OUTPUT.PUT_LINE(num || ' is a palindrome');
+    ELSE
+        DBMS_OUTPUT.PUT_LINE(num || ' is not a palindrome');
+    END IF;
+END;
+/
+
+
+---
+
+QUESTION 8 – Salary Increase Procedure (PL/SQL)
+
+CREATE OR REPLACE PROCEDURE IncreaseSalary(emp_id INT) IS
+    emp_job VARCHAR2(20);
+    emp_sal NUMBER;
+BEGIN
+    SELECT job, salary INTO emp_job, emp_sal FROM emp WHERE empno=emp_id;
+    IF emp_job='CLERK' THEN
+        emp_sal := emp_sal * 1.05;
+    ELSIF emp_job='SALESMAN' THEN
+        emp_sal := emp_sal * 1.07;
+    ELSIF emp_job='ANALYST' THEN
+        emp_sal := emp_sal * 1.10;
+    ELSIF emp_job='MANAGER' THEN
+        emp_sal := emp_sal * 1.20;
+    ELSIF emp_job='PRESIDENT' THEN
+        emp_sal := emp_sal * 1.25;
+    END IF;
+    UPDATE emp SET salary=emp_sal WHERE empno=emp_id;
+END IncreaseSalary;
+/
+
+
+---
+
+QUESTION 9 – Library Fine Trigger
+
+CREATE TABLE BOOK_AVAIL (
+    bookid INT PRIMARY KEY,
+    title VARCHAR(50),
+    copies INT,
+    price FLOAT
+);
+
+CREATE TABLE STUDENT (
+    st_id INT PRIMARY KEY,
+    name VARCHAR(50),
+    class VARCHAR(10),
+    fine FLOAT
+);
+
+CREATE TABLE ISSUE (
+    st_id INT,
+    bookid INT,
+    issuedate DATE,
+    returndate DATE,
+    FOREIGN KEY (st_id) REFERENCES STUDENT(st_id),
+    FOREIGN KEY (bookid) REFERENCES BOOK_AVAIL(bookid)
+);
+
+INSERT INTO BOOK_AVAIL VALUES (&BookID, '&Title', &Copies, &Price);
+INSERT INTO STUDENT VALUES (&StudentID, '&StudentName', '&Class', 0);
+INSERT INTO ISSUE VALUES (&StudentID, &BookID, TO_DATE('&IssueDate','DD-MM-YYYY'), NULL);
+
+CREATE OR REPLACE TRIGGER Fine_Calc
+AFTER UPDATE OF returndate ON ISSUE
+FOR EACH ROW
+DECLARE
+    days_diff INT;
+    fine_amt FLOAT;
+    price FLOAT;
+BEGIN
+    SELECT price INTO price FROM BOOK_AVAIL WHERE bookid=:NEW.bookid;
+    days_diff := :NEW.returndate - :NEW.issuedate;
+    IF days_diff > 90 THEN
+        fine_amt := price * 0.20;
+    ELSIF days_diff > 60 THEN
+        fine_amt := price * 0.10;
+    ELSIF days_diff > 30 THEN
+        fine_amt := price * 0.05;
+    ELSE
+        fine_amt := 0;
+    END IF;
+    UPDATE STUDENT SET fine=fine_amt WHERE st_id=:NEW.st_id;
+END;
+/
+
+
+---
+
+QUESTION 10 – Rank List Generation (PL/SQL)
+
+CREATE TABLE student_rank (
+    name VARCHAR2(50),
+    rollno INT PRIMARY KEY,
+    sub1 INT,
+    sub2 INT,
+    sub3 INT,
+    total INT,
+    rank INT
+);
+
+INSERT INTO student_rank (name, rollno, sub1, sub2, sub3, total, rank)
+VALUES ('&StudentName', &RollNo, &Subject1Marks, &Subject2Marks, &Subject3Marks, NULL, NULL);
+
+DECLARE
+    r INT := 0;
+BEGIN
+    FOR rec IN (SELECT name, rollno, sub1, sub2, sub3, (sub1+sub2+sub3) total
+                FROM student_rank
+                ORDER BY (sub1+sub2+sub3) DESC) LOOP
+        r := r + 1;
+        UPDATE student_rank SET rank=r, total=rec.total WHERE rollno=rec.rollno;
+    END LOOP;
+END;
+/
+
+
+---
+
+QUESTION 11 – Salary Increment Trigger
+
+CREATE TABLE EMPLOYEE (
+    empid INT PRIMARY KEY,
+    empname VARCHAR(50),
+    salary FLOAT
+);
+
+CREATE TABLE INCREMENT (
+    empid INT,
+    incr FLOAT
+);
+
+INSERT INTO EMPLOYEE VALUES (&EmpID, '&EmpName', &Salary);
+
+CREATE OR REPLACE TRIGGER Salary_Incr
+AFTER UPDATE OF salary ON EMPLOYEE
+FOR EACH ROW
+BEGIN
+    IF (:NEW.salary - :OLD.salary) > 1000 THEN
+        INSERT INTO INCREMENT(empid, incr)
+        VALUES(:NEW.empid, :NEW.salary - :OLD.salary);
+    END IF;
+END;
+/
+
+
+---
+
+QUESTION 12 – Reverse a String
+
+DECLARE
+    str VARCHAR2(50) := '&EnterString';
+    rev_str VARCHAR2(50) := '';
+BEGIN
+    FOR i IN REVERSE 1..LENGTH(str) LOOP
+        rev_str := rev_str || SUBSTR(str, i, 1);
+    END LOOP;
+    DBMS_OUTPUT.PUT_LINE('Reversed String: ' || rev_str);
+END;
+/
+
+
+
+
+
