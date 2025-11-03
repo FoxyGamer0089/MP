@@ -1,0 +1,144 @@
+11.02 5:46 PM
+Pass 1:
+#include<stdio.h>
+#include<string.h>
+void main() {
+    FILE *in=fopen("input.txt","r"), *opt=fopen("optab.txt","r");
+    FILE *sym=fopen("symtab.txt","w"), *out=fopen("out.txt","w");
+    char la[10], op[10], opnd[10], code[10], val[10]; int loc=0;
+    fscanf(in,"%s%s%s",la,op,opnd);
+    if(strcmp(op,"START")==0){ loc=atoi(opnd); fprintf(out,"%s %s %s\n",la,op,opnd); fscanf(in,"%s%s%s",la,op,opnd); }
+    while(strcmp(op,"END")!=0){
+        fprintf(out,"%d %s %s %s\n",loc,la,op,opnd);
+        if(strcmp(la,"**")!=0) fprintf(sym,"%s\t%d\n",la,loc);
+        int f=0; rewind(opt);
+        while(fscanf(opt,"%s%s",code,val)!=EOF) if(strcmp(op,code)==0) f=1;
+        if(f) loc+=3; else if(strcmp(op,"WORD")==0) loc+=3; else if(strcmp(op,"RESW")==0) loc+=3*atoi(opnd); else if(strcmp(op,"BYTE")==0) loc+=1;
+        fscanf(in,"%s%s%s",la,op,opnd);
+    }
+    fprintf(out,"%d %s %s %s\n",loc,la,op,opnd);
+}
+FILES NEEDED:
+Input.txt
+** START 1000
+L1 LDA FIVE
+** STA ALPHA
+ALPHA RESW 1
+FIVE WORD 5
+** END **
+
+Optab.txt
+LDA 33
+STA 44
+ADD 18
+SUB 1C
+MUL 20
+DIV 24
+
+Pass 2:
+#include<stdio.h>
+#include<string.h>
+void main(){
+ FILE *in=fopen("out.txt","r"),*opt=fopen("optab.txt","r"),*sym=fopen("symtab.txt","r");
+ FILE *obj=fopen("objcode.txt","w");
+ char la[10],op[10],opnd[10],m[10],v[10],s[10]; int val;
+ fscanf(in,"%s%s%s",la,op,opnd);
+ if(strcmp(op,"START")==0){fprintf(obj,"H^%s^00%s\n",la,opnd);fscanf(in,"%s%s%s%s",s,la,op,opnd);}
+ fprintf(obj,"T^");
+ while(strcmp(op,"END")!=0){
+  rewind(opt); int f=0;
+  while(fscanf(opt,"%s%s",m,v)!=EOF) if(strcmp(op,m)==0){f=1;break;}
+  if(f){ rewind(sym);
+    while(fscanf(sym,"%s%d",m,&val)!=EOF)
+      if(strcmp(opnd,m)==0){fprintf(obj,"%s%s^",v,"0000"+val);break;}
+  }
+  else if(strcmp(op,"WORD")==0)fprintf(obj,"%06d^",atoi(opnd));
+  fscanf(in,"%s%s%s%s",s,la,op,opnd);
+ }
+ fprintf(obj,"\nE^00%s",opnd);
+}
+
+FILES REQUIRED 
+optab.txt
+LDA 33
+STA 44
+ADD 18
+SUB 1C
+MUL 20
+DIV 24
+
+symtab.txt
+L1	1000
+ALPHA	1006
+FIVE	1009
+
+out.txt
+** START 1000
+1000 L1 LDA FIVE
+1003 ** STA ALPHA
+1006 ALPHA RESW 1
+1009 FIVE WORD 5
+100C ** END **
+
+
+ABSOLUTE LOADER:
+
+#include<stdio.h>
+#include<string.h>
+void main(){
+ FILE *fp=fopen("objcode.txt","r");
+ char r[20];
+ int addr,st,len,i;
+ fscanf(fp,"%s",r);                 
+ fscanf(fp,"%s",r);                 
+ fscanf(fp,"%s",r);                
+ st=strtol(&r[2],NULL,16);         
+ printf("ABSOLUTE LOADER OUTPUT\n");
+ fscanf(fp,"%s",r);                 
+ while(r[0]!='E'){
+  addr=st;
+  for(i=2;r[i]!='^'&&r[i]!='\0';i+=6,addr+=3){
+    char temp[7]; strncpy(temp,&r[i],6); temp[6]='\0';
+    printf("%X\t%s\n",addr,temp);
+  }
+  fscanf(fp,"%s",r);                
+ }
+}
+
+FILES REQUIRED 
+objcode.txt
+H^**^001000
+T^330009^440006^000005^
+E^001000
+
+
+
+RELOCATING LOADER:
+#include<stdio.h>
+#include<string.h>
+void main(){
+ FILE *fp=fopen("objcode.txt","r");
+ char r[20]; int start,newstart,addr,i;
+ printf("Enter new starting address: "); scanf("%x",&newstart);
+ fscanf(fp,"%s",r); fscanf(fp,"%s",r); fscanf(fp,"%s",r);
+ start=strtol(&r[2],NULL,16);
+ int diff=newstart-start;
+ printf("\nRELOCATING LOADER OUTPUT\n");
+ fscanf(fp,"%s",r);
+ while(r[0]!='E'){
+  addr=newstart;
+  for(i=2;r[i]!='^'&&r[i]!='\0';i+=6,addr+=3){
+    char temp[7]; strncpy(temp,&r[i],6); temp[6]='\0';
+    printf("%X\t%s\n",addr,temp);
+  }
+  fscanf(fp,"%s",r);
+ }
+}
+
+FILES REQUIRED 
+
+objcode.txt
+H^**^001000
+T^330009^440006^000005^
+E^001000
+
